@@ -132,7 +132,7 @@ src/main/java/com/voting/candidate_service/
 ### Step 2: DTOs (Data Transfer Objects)
 > Files: 5 new DTOs + 1 update
 
-- [ ] 2.1 — Update `CandidateResponseDTO` → add `status`, `createdAt`, `updatedAt` fields
+- [x] 2.1 — Update `CandidateResponseDTO` → add `status`, `createdAt`, `updatedAt` fields
 - [ ] 2.2 — Create `CandidateUpdateDTO` (optional `name`, optional `party`)
 - [ ] 2.3 — Create `CandidateStatusUpdateDTO` (required `status` validated against enum)
 - [ ] 2.4 — Create `CandidateValidationDTO` (`exists`, `active`, `electionId`) — used by Voting Service Feign
@@ -181,12 +181,12 @@ src/main/java/com/voting/candidate_service/
 ### Step 6: Service Layer — Phase 1 (Core CRUD)
 > Files: `ICandidateService.java`, `CandidateService.java`
 
-- [ ] 6.1 — Rewrite `ICandidateService` with full method signatures using DTOs
-- [ ] 6.2 — Implement `createCandidate(CandidateRequestDTO)` with duplicate name check
-- [ ] 6.3 — Implement `getCandidateById(UUID)` with `ResourceNotFoundException`
-- [ ] 6.4 — Implement `getAllCandidates(Pageable)` with pagination
+- [x] 6.1 — Rewrite `ICandidateService` with full method signatures using DTOs
+- [x] 6.2 — Implement `createCandidate(CandidateRequestDTO)` with duplicate name check
+- [x] 6.3 — Implement `getCandidateById(UUID)` with `ResourceNotFoundException`
+- [x] 6.4 — Implement `getAllCandidates(Pageable)` with pagination
 - [ ] 6.5 — Implement `updateCandidate(UUID, CandidateUpdateDTO)` with partial update logic
-- [ ] 6.6 — Implement `deleteCandidate(UUID)` as soft-delete (set `isDeleted = true`)
+- [x] 6.6 — Implement `deleteCandidate(UUID)` as soft-delete (set `isDeleted = true`)
 
 ---
 
@@ -207,7 +207,7 @@ src/main/java/com/voting/candidate_service/
 ### Step 9: Controller — Wire All Endpoints
 > File: `CandidateController.java`
 
-- [ ] 9.1 — Phase 1: `POST /`, `GET /{id}`, `GET /`, `PUT /{id}`, `DELETE /{id}`
+- [x] 9.1 — Phase 1: `POST /`, `GET /{id}`, `GET /`, `PUT /{id}`, `DELETE /{id}`
 - [ ] 9.2 — Phase 2: `GET /election/{electionId}`, `GET /{id}/exists`, `GET /{id}/validate`
 - [ ] 9.3 — Phase 3: `POST /bulk`, `GET /search` (with `@RequestParam` filters)
 - [ ] 9.4 — Phase 4: `PATCH /{id}/status`, `GET /election/{electionId}/active`

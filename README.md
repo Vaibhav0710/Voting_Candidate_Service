@@ -86,11 +86,11 @@ http://localhost:8082/api/v1/candidates
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `POST` | `/` | Register a new candidate | 🔜 |
-| `GET` | `/{id}` | Get candidate by ID | 🔜 |
-| `GET` | `/` | List all candidates (paginated) | 🔜 |
-| `PUT` | `/{id}` | Update candidate details | 🔜 |
-| `DELETE` | `/{id}` | Soft-delete a candidate | 🔜 |
+| `POST` | `/` | Register a new candidate | ✅ |
+| `GET` | `/{id}` | Get candidate by ID | ✅ |
+| `GET` | `/` | List all candidates (paginated) | ✅ |
+| `PUT` | `/{id}` | Update candidate details | ✅ |
+| `DELETE` | `/{id}` | Soft-delete a candidate | ✅ |
 
 #### Phase 2 — Election-Scoped (Internal)
 
@@ -320,23 +320,21 @@ candidate-service/
    ```
 
 3. **Configure database connection**  
-   Update `src/main/resources/application.yml`:
-   ```yaml
-   spring:
-     datasource:
-       url: jdbc:postgresql://localhost:5432/candidate_service_db
-       username: your_username
-       password: your_password
+   Update `src/main/resources/application.properties`:
+   ```properties
+   spring.datasource.url=jdbc:postgresql://localhost:5432/candidate_service_db
+   spring.datasource.username=your_username
+   spring.datasource.password=your_password
    ```
 
 4. **Build the project**
    ```bash
-   mvn clean install
+   ./mvnw clean install
    ```
 
 5. **Run the service**
    ```bash
-   mvn spring-boot:run
+   ./mvnw spring-boot:run
    ```
 
 6. **Verify**
@@ -389,18 +387,18 @@ mvn verify
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| Step 0 | Fix existing code issues | 🔜 Not Started |
-| Step 1 | Entity & schema enhancement | 🔜 Not Started |
-| Step 2 | DTOs | 🔜 Not Started |
-| Step 3 | Exception handling | 🔜 Not Started |
-| Step 4 | Mapper utility | 🔜 Not Started |
-| Step 5 | Repository queries | 🔜 Not Started |
-| Step 6 | Core CRUD APIs | 🔜 Not Started |
-| Step 7 | Election-scoped APIs | 🔜 Not Started |
-| Step 8 | Bulk + status APIs | 🔜 Not Started |
-| Step 9 | Controller wiring | 🔜 Not Started |
-| Step 10 | Configuration | 🔜 Not Started |
-| Step 11 | Testing | 🔜 Not Started |
+| Step 0 | Fix existing code issues | ✅ Done |
+| Step 1 | Entity & schema enhancement | ✅ Done |
+| Step 2 | DTO Expansion | 🔜 In Progress |
+| Step 3 | Exception handling (Global) | 🔜 In Progress |
+| Step 4 | Mapper utility | 🔜 Planned |
+| Step 5 | Repository queries (Pagination) | ✅ Done |
+| Step 6 | Core CRUD APIs | ✅ Done |
+| Step 7 | Election-scoped APIs | 🔜 Planned |
+| Step 8 | Bulk + status APIs | 🔜 Planned |
+| Step 9 | Controller wiring | ✅ Done |
+| Step 10 | Configuration | 🔜 Planned |
+| Step 11 | Testing & Build Verification | ✅ Done |
 | Step 12 | Kafka integration | 🔜 Planned |
 | Step 13 | Redis caching | 🔜 Planned |
 | Step 14 | Security (JWT) | 🔜 Planned |
