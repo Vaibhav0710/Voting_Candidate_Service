@@ -1,4 +1,4 @@
-package com.voting.candidate_service.model.enums;
+package com.voting.candidateservice.model.enums;
 
 public enum CandidateStatus {
     ACTIVE,

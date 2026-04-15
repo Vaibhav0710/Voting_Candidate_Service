@@ -1,6 +1,6 @@
-package com.voting.candidate_service.dto;
+package com.voting.candidateservice.dto;
 
-import com.voting.candidate_service.model.enums.CandidateStatus;
+import com.voting.candidateservice.model.enums.CandidateStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CandidateResponseDTO {
-    
+
     private UUID id;
     private String name;
     private String party;

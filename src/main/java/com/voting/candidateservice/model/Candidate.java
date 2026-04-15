@@ -1,6 +1,6 @@
-package com.voting.candidate_service.model;
+package com.voting.candidateservice.model;
 
-import com.voting.candidate_service.model.enums.CandidateStatus;
+import com.voting.candidateservice.model.enums.CandidateStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,12 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(
-    name = "candidates",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uq_candidate_election", columnNames = {"name", "election_id"})
-    }
-)
+@Table(name = "candidates")
 @Getter
 @Setter
 @NoArgsConstructor

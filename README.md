@@ -14,12 +14,17 @@
 The **Candidate Service** manages the lifecycle of election candidates — registration, updates, status management, and validation. It is a core microservice consumed by the Voting Service (to validate candidates before accepting votes) and the Result Service (to display candidate information in results).
 
 ### Responsibilities
-- ✅ Candidate CRUD operations (create, read, update, soft-delete)
-- ✅ Election-scoped candidate queries
-- ✅ Candidate existence & validation checks (consumed by Voting Service via OpenFeign)
+- ✅ Candidate CRUD operations (Standard REST)
+- ✅ Standardized ApiResponse wrapper
+- ✅ Global Exception Handling
+- ✅ DTO-based data transfer
+- ✅ Refactored to idiomatic Java conventions
+- ✅ soft-delete implementation
 - ✅ Bulk candidate registration
 - ✅ Status management (ACTIVE / DISQUALIFIED / WITHDRAWN)
-- ✅ Kafka event publishing for cross-service notifications
+- 🔜 Election-scoped candidate queries
+- 🔜 Candidate existence & validation checks (Feign)
+- 🔜 Kafka event publishing
 
 ---
 
@@ -39,12 +44,12 @@ The **Candidate Service** manages the lifecycle of election candidates — regis
     │  (Auth)    │  │ ◄──THIS──► │  │             │
     └────────────┘  └──────┬─────┘  └─────────────┘
                            │               │
-                    ┌──────▼─────┐         │
-                    │ PostgreSQL │         │
-                    │ (candidate │    OpenFeign
-                    │  _service  │   (validates
-                    │  _db)      │  candidates)
-                    └────────────┘
+                     ┌──────▼─────┐         │
+                     │ PostgreSQL │         │
+                     │ (candidate │    OpenFeign
+                     │ service_db)│   (validates
+                     │            │  candidates)
+                     └────────────┘
 ```
 
 ### Cross-Service Communication
@@ -62,7 +67,7 @@ The **Candidate Service** manages the lifecycle of election candidates — regis
 |-----------|-----------|
 | Language | Java 17 |
 | Framework | Spring Boot 4.0.5 |
-| Database | PostgreSQL (dedicated: `candidate_service_db`) |
+| Database | PostgreSQL (dedicated: `candidateservice_db`) |
 | ORM | Spring Data JPA / Hibernate |
 | Validation | Jakarta Bean Validation (`spring-boot-starter-validation`) |
 | Service Discovery | Eureka Client |
@@ -111,7 +116,7 @@ http://localhost:8082/api/v1/candidates
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `PATCH` | `/{id}/status` | Change candidate status | 🔜 |
+| `PATCH` | `/{id}/status` | Change candidate status | ✅ |
 | `GET` | `/election/{electionId}/active` | Get active candidates only | 🔜 |
 
 ### Request/Response Examples
@@ -254,10 +259,8 @@ CREATE INDEX idx_candidates_election_status ON candidates(election_id, status);
 candidate-service/
 ├── src/
 │   ├── main/
-│   │   ├── java/com/voting/candidate_service/
+│   │   ├── java/com/voting/candidateservice/
 │   │   │   ├── CandidateServiceApplication.java
-│   │   │   ├── config/
-│   │   │   │   └── AppConfig.java
 │   │   │   ├── controller/
 │   │   │   │   └── CandidateController.java
 │   │   │   ├── dto/
@@ -279,10 +282,10 @@ candidate-service/
 │   │   │   │   └── enums/
 │   │   │   │       └── CandidateStatus.java
 │   │   │   ├── repository/
-│   │   │   │   └── ICandidateRepository.java
+│   │   │   │   └── CandidateRepository.java
 │   │   │   └── service/
-│   │   │       ├── ICandidateService.java
-│   │   │       └── CandidateService.java
+│   │   │       ├── CandidateService.java (Interface)
+│   │   │       └── CandidateServiceImpl.java (Implementation)
 │   │   └── resources/
 │   │       └── application.yml
 │   └── test/
@@ -412,4 +415,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 > **Maintainer:** Vaibhav  
-> **Last Updated:** April 14, 2026
+> **Last Updated:** April 15, 2026
