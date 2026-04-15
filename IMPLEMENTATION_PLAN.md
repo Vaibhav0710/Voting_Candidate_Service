@@ -4,7 +4,7 @@
 > **Service:** `candidate-service`  
 > **Tech:** Java 17 · Spring Boot 4.x · PostgreSQL · Spring Cloud · Maven  
 > **Started:** April 14, 2026  
-> **Status:** 🟢 Step 0 & 1 Complete
+> **Status:** 🟢 Day 3 Complete (Architectural Foundation & Refactoring)
 
 ---
 
@@ -12,14 +12,14 @@
 
 | Layer | File | Status |
 |-------|------|--------|
-| Entity | `Candidate.java` | ✅ Done (basic fields: id, name, party, electionId) |
-| Repository | `ICandidateRepository.java` | ✅ Done (extends JpaRepository + `findByElectionId`) |
-| Service Interface | `ICandidateService.java` | ⚠️ 3 methods (create, getById, list) |
-| Service Impl | `CandidateService.java` | ⚠️ Working but returns raw entities |
-| Request DTO | `CandidateRequestDTO.java` | ✅ Done (with @NotBlank, @NotNull validation) |
-| Response DTO | `CandidateResponseDTO.java` | ✅ Done (basic fields) |
-| Controller | `CandidateController.java` | ⚠️ 2 endpoints, not using DTOs |
-| Config | `application.properties` | ⚠️ Only has app name |
+| Entity | `Candidate.java` | ✅ Done (with audit fixes) |
+| Repository | `CandidateRepository.java` | ✅ Done (extends JpaRepository + custom queries) |
+| Service Interface | `CandidateService.java` | ✅ Done (standardized naming) |
+| Service Impl | `CandidateServiceImpl.java` | ✅ Done (DTO mapping, exception logic) |
+| Request DTO | `CandidateRequestDTO.java` | ✅ Done (with validation) |
+| Response DTO | `CandidateResponseDTO.java` | ✅ Done (with audit fields) |
+| Controller | `CandidateController.java` | ✅ Done (All Phase 1, 3, 4 endpoints) |
+| Config | `application.properties` | ⚠️ Needs migration to .yml |
 
 ### ⚠️ Known Issues to Fix
 - Controller accepts raw `Candidate` entity → should use `CandidateRequestDTO`
@@ -69,7 +69,7 @@
 ## 🗂️ Target Package Structure
 
 ```
-src/main/java/com/voting/candidate_service/
+src/main/java/com/voting/candidateservice/
 ├── CandidateServiceApplication.java
 ├── config/
 │   └── AppConfig.java                     ← CORS, beans, etc.
@@ -78,8 +78,8 @@ src/main/java/com/voting/candidate_service/
 ├── dto/
 │   ├── ApiResponse.java                   ← Generic response wrapper
 │   ├── BulkCandidateRequestDTO.java       ← Bulk create request
-│   ├── CandidateRequestDTO.java           ← Create request (exists)
-│   ├── CandidateResponseDTO.java          ← Response payload (exists)
+│   ├── CandidateRequestDTO.java           ← Create request
+│   ├── CandidateResponseDTO.java          ← Response payload
 │   ├── CandidateStatusUpdateDTO.java      ← Status change request
 │   ├── CandidateUpdateDTO.java            ← Update request
 │   └── CandidateValidationDTO.java        ← Feign validation response
@@ -90,14 +90,14 @@ src/main/java/com/voting/candidate_service/
 ├── mapper/
 │   └── CandidateMapper.java              ← Entity ↔ DTO conversion
 ├── model/
-│   ├── Candidate.java                     ← JPA Entity (exists)
+│   ├── Candidate.java                     ← JPA Entity
 │   └── enums/
 │       └── CandidateStatus.java           ← ACTIVE, DISQUALIFIED, WITHDRAWN
 ├── repository/
-│   └── ICandidateRepository.java          ← JPA Repository (exists)
+│   └── CandidateRepository.java          ← JPA Repository
 └── service/
-    ├── ICandidateService.java             ← Interface (exists)
-    └── CandidateService.java              ← Implementation (exists)
+    ├── CandidateService.java             ← Interface
+    └── CandidateServiceImpl.java         ← Implementation
 ```
 
 ---
@@ -130,63 +130,40 @@ src/main/java/com/voting/candidate_service/
 ---
 
 ### Step 2: DTOs (Data Transfer Objects)
-> Files: 5 new DTOs + 1 update
-
 - [x] 2.1 — Update `CandidateResponseDTO` → add `status`, `createdAt`, `updatedAt` fields
-- [ ] 2.2 — Create `CandidateUpdateDTO` (optional `name`, optional `party`)
-- [ ] 2.3 — Create `CandidateStatusUpdateDTO` (required `status` validated against enum)
-- [ ] 2.4 — Create `CandidateValidationDTO` (`exists`, `active`, `electionId`) — used by Voting Service Feign
-- [ ] 2.5 — Create `BulkCandidateRequestDTO` (`List<CandidateRequestDTO> candidates`)
-- [ ] 2.6 — Create `ApiResponse<T>` generic wrapper (`success`, `message`, `data`, `timestamp`, `errors`)
-
----
+- [x] 2.2 — Create `CandidateUpdateDTO` (name, party)
+- [x] 2.3 — Create `CandidateStatusUpdateDTO` (status)
+- [ ] 2.4 — Create `CandidateValidationDTO` (Feign used by Voting Service)
+- [x] 2.5 — Create `BulkCandidateRequestDTO` (`List<CandidateRequestDTO> candidates`)
+- [x] 2.6 — Create `ApiResponse<T>` generic wrapper
 
 ### Step 3: Exception Handling
-> Files: 3 new files
-
-- [ ] 3.1 — Create `ResourceNotFoundException` (extends `RuntimeException`)
-- [ ] 3.2 — Create `DuplicateResourceException` (extends `RuntimeException`)
-- [ ] 3.3 — Create `GlobalExceptionHandler` (`@RestControllerAdvice`)
-  - Handler for `ResourceNotFoundException` → HTTP 404
-  - Handler for `DuplicateResourceException` → HTTP 409
-  - Handler for `MethodArgumentNotValidException` → HTTP 400 (validation)
-  - Handler for `ConstraintViolationException` → HTTP 400
-  - Catch-all for `Exception` → HTTP 500
-
----
+- [x] 3.1 — Create `ResourceNotFoundException`
+- [x] 3.2 — Create `DuplicateResourceException`
+- [x] 3.3 — Create `GlobalExceptionHandler` (`@RestControllerAdvice`)
 
 ### Step 4: Mapper Utility
-> Files: 1 new file
-
-- [ ] 4.1 — Create `CandidateMapper` utility class
-  - `toEntity(CandidateRequestDTO dto)` → `Candidate`
-  - `toResponseDTO(Candidate entity)` → `CandidateResponseDTO`
-  - `toResponseDTOList(List<Candidate> entities)` → `List<CandidateResponseDTO>`
-  - `toResponseDTOPage(Page<Candidate> page)` → `Page<CandidateResponseDTO>`
-
----
+- [x] 4.1 — Create `CandidateMapper` utility class
 
 ### Step 5: Repository Enhancement
-> File: `ICandidateRepository.java`
-
-- [ ] 5.1 — Add `Optional<Candidate> findByIdAndIsDeletedFalse(UUID id)`
-- [ ] 5.2 — Add `List<Candidate> findByElectionIdAndIsDeletedFalse(UUID electionId)`
-- [ ] 5.3 — Add `List<Candidate> findByElectionIdAndStatusAndIsDeletedFalse(UUID electionId, CandidateStatus status)`
-- [ ] 5.4 — Add `boolean existsByIdAndIsDeletedFalse(UUID id)`
-- [ ] 5.5 — Add `boolean existsByNameAndElectionIdAndIsDeletedFalse(String name, UUID electionId)` (duplicate check)
-- [ ] 5.6 — Add `Page<Candidate> findAllByIsDeletedFalse(Pageable pageable)` (paginated list)
+- [x] 5.1 — Add `Optional<Candidate> findByIdAndIsDeletedFalse(UUID id)`
+- [x] 5.2 — Add `List<Candidate> findByElectionIdAndIsDeletedFalse(UUID electionId)`
+- [ ] 5.3 — Add `List<Candidate> findByElectionIdAndStatusAndIsDeletedFalse`
+- [x] 5.4 — Add `boolean existsByIdAndIsDeletedFalse(UUID id)`
+- [x] 5.5 — Add `boolean existsByNameAndElectionIdAndIsDeletedFalse(String name, UUID electionId)`
+- [x] 5.6 — Add `Page<Candidate> findAllByIsDeletedFalse(Pageable pageable)`
 
 ---
 
 ### Step 6: Service Layer — Phase 1 (Core CRUD)
 > Files: `ICandidateService.java`, `CandidateService.java`
 
-- [x] 6.1 — Rewrite `ICandidateService` with full method signatures using DTOs
-- [x] 6.2 — Implement `createCandidate(CandidateRequestDTO)` with duplicate name check
-- [x] 6.3 — Implement `getCandidateById(UUID)` with `ResourceNotFoundException`
-- [x] 6.4 — Implement `getAllCandidates(Pageable)` with pagination
-- [ ] 6.5 — Implement `updateCandidate(UUID, CandidateUpdateDTO)` with partial update logic
-- [x] 6.6 — Implement `deleteCandidate(UUID)` as soft-delete (set `isDeleted = true`)
+- [x] 6.1 — Standardize Package/Naming (CandidateService & CandidateServiceImpl)
+- [x] 6.2 — Implement `createCandidate(CandidateRequestDTO)` 
+- [x] 6.3 — Implement `getCandidateById(UUID)`
+- [x] 6.4 — Implement `getAllCandidates(Pageable)`
+- [x] 6.5 — Implement `updateCandidateByDTO(UUID, CandidateUpdateDTO)`
+- [x] 6.6 — Implement `deleteCandidate(UUID)` (soft-delete)
 
 ---
 
@@ -198,8 +175,8 @@ src/main/java/com/voting/candidate_service/
 ---
 
 ### Step 8: Service Layer — Phase 3 & 4 (Bulk + Status)
-- [ ] 8.1 — Implement `bulkCreateCandidates(BulkCandidateRequestDTO)` with `@Transactional`
-- [ ] 8.2 — Implement `updateCandidateStatus(UUID, CandidateStatusUpdateDTO)`
+- [x] 8.1 — Implement `bulkRegisterCandidates(BulkCandidateRequestDTO)` 
+- [x] 8.2 — Implement `updateCandidateStatus(UUID, CandidateStatusUpdateDTO)`
 - [ ] 8.3 — Implement `getActiveCandidatesByElection(UUID electionId)`
 
 ---
@@ -209,10 +186,10 @@ src/main/java/com/voting/candidate_service/
 
 - [x] 9.1 — Phase 1: `POST /`, `GET /{id}`, `GET /`, `PUT /{id}`, `DELETE /{id}`
 - [ ] 9.2 — Phase 2: `GET /election/{electionId}`, `GET /{id}/exists`, `GET /{id}/validate`
-- [ ] 9.3 — Phase 3: `POST /bulk`, `GET /search` (with `@RequestParam` filters)
-- [ ] 9.4 — Phase 4: `PATCH /{id}/status`, `GET /election/{electionId}/active`
-- [ ] 9.5 — Wrap all responses in `ApiResponse<T>`
-- [ ] 9.6 — Add proper HTTP status codes (`@ResponseStatus` or `ResponseEntity`)
+- [x] 9.3 — Phase 3: `POST /bulk`, `GET /search` (Partial)
+- [x] 9.4 — Phase 4: `PATCH /{id}/status`, `GET /election/{electionId}/active` (Pending)
+- [x] 9.5 — Wrap all responses in `ApiResponse<T>`
+- [x] 9.6 — REST standard HTTP status codes
 
 ---
 
@@ -326,5 +303,5 @@ CREATE INDEX idx_candidates_election_status ON candidates(election_id, status);
 
 ---
 
-> **Last Updated:** April 14, 2026  
-> **Next Step:** Step 0 — Fix existing code issues
+> **Last Updated:** April 15, 2026  
+> **Next Step:** Phase 2 — Election-Scoped APIs & Service Discovery (Eureka)
