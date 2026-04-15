@@ -1,60 +1,84 @@
 package com.voting.candidate_service.service;
 
-import com.voting.candidate_service.dto.CandidateRequestDTO;
-import com.voting.candidate_service.dto.CandidateResponseDTO;
+import com.voting.candidate_service.dto.*;
+import com.voting.candidate_service.exception.DuplicateResourceException;
 import com.voting.candidate_service.exception.ResourceNotFoundException;
+import com.voting.candidate_service.mapper.CandidateMapper;
 import com.voting.candidate_service.model.Candidate;
 import com.voting.candidate_service.repository.ICandidateRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CandidateService implements ICandidateService {
 
-    @Autowired
-    private ICandidateRepository candidateRepository;
+    private final ICandidateRepository candidateRepository;
+    private final CandidateMapper candidateMapper;
 
     @Override
+    @Transactional
     public CandidateResponseDTO createCandidate(CandidateRequestDTO requestDTO) {
-        Candidate candidate = Candidate.builder()
-                .name(requestDTO.getName())
-                .party(requestDTO.getParty())
-                .electionId(requestDTO.getElectionId())
-                .build();
-        
+        // Prevent double registration
+        if (candidateRepository.existsByNameAndElectionIdAndIsDeletedFalse(requestDTO.getName(), requestDTO.getElectionId())) {
+            throw new DuplicateResourceException("Candidate with name " + requestDTO.getName() + " already registered for this election");
+        }
+
+        Candidate candidate = candidateMapper.toEntity(requestDTO);
         Candidate savedCandidate = candidateRepository.save(candidate);
-        return mapToResponseDTO(savedCandidate);
+        return candidateMapper.toResponseDTO(savedCandidate);
     }
 
     @Override
     public CandidateResponseDTO getCandidateById(UUID id) {
         Candidate candidate = findCandidateById(id);
-        return mapToResponseDTO(candidate);
+        return candidateMapper.toResponseDTO(candidate);
     }
 
     @Override
     public Page<CandidateResponseDTO> getAllCandidates(Pageable pageable) {
         return candidateRepository.findAllByIsDeletedFalse(pageable)
-                .map(this::mapToResponseDTO);
+                .map(candidateMapper::toResponseDTO);
     }
 
     @Override
-    public CandidateResponseDTO updateCandidate(UUID id, CandidateRequestDTO requestDTO) {
+    @Transactional
+    public CandidateResponseDTO updateCandidate(UUID id, CandidateUpdateDTO updateDTO) {
         Candidate candidate = findCandidateById(id);
         
-        candidate.setName(requestDTO.getName());
-        candidate.setParty(requestDTO.getParty());
-        candidate.setElectionId(requestDTO.getElectionId());
+        candidate.setName(updateDTO.getName());
+        candidate.setParty(updateDTO.getParty());
         
         Candidate updatedCandidate = candidateRepository.save(candidate);
-        return mapToResponseDTO(updatedCandidate);
+        return candidateMapper.toResponseDTO(updatedCandidate);
     }
 
     @Override
+    @Transactional
+    public CandidateResponseDTO updateCandidateStatus(UUID id, CandidateStatusUpdateDTO statusUpdateDTO) {
+        Candidate candidate = findCandidateById(id);
+        candidate.setStatus(statusUpdateDTO.getStatus());
+        Candidate updatedCandidate = candidateRepository.save(candidate);
+        return candidateMapper.toResponseDTO(updatedCandidate);
+    }
+
+    @Override
+    @Transactional
+    public List<CandidateResponseDTO> bulkRegisterCandidates(BulkCandidateRequestDTO bulkRequestDTO) {
+        return bulkRequestDTO.getCandidates().stream()
+                .map(this::createCandidate)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
     public void deleteCandidate(UUID id) {
         Candidate candidate = findCandidateById(id);
         candidate.setDeleted(true);
@@ -70,18 +94,5 @@ public class CandidateService implements ICandidateService {
             throw new ResourceNotFoundException("Candidate not found with id: " + id);
         }
         return candidate;
-    }
-
-    // Helper method to map Entity to ResponseDTO
-    private CandidateResponseDTO mapToResponseDTO(Candidate candidate) {
-        return CandidateResponseDTO.builder()
-                .id(candidate.getId())
-                .name(candidate.getName())
-                .party(candidate.getParty())
-                .electionId(candidate.getElectionId())
-                .status(candidate.getStatus())
-                .createdAt(candidate.getCreatedAt())
-                .updatedAt(candidate.getUpdatedAt())
-                .build();
     }
 }

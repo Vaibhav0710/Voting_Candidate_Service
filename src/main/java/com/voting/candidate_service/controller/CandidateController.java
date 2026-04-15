@@ -1,54 +1,74 @@
 package com.voting.candidate_service.controller;
 
-import com.voting.candidate_service.dto.CandidateRequestDTO;
-import com.voting.candidate_service.dto.CandidateResponseDTO;
+import com.voting.candidate_service.dto.*;
 import com.voting.candidate_service.service.ICandidateService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/candidates")
+@RequiredArgsConstructor
 public class CandidateController {
 
-    @Autowired
-    private ICandidateService candidateService;
+    private final ICandidateService candidateService;
 
     @PostMapping
-    public ResponseEntity<CandidateResponseDTO> createCandidate(@Valid @RequestBody CandidateRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponse<CandidateResponseDTO>> createCandidate(@Valid @RequestBody CandidateRequestDTO requestDTO) {
         CandidateResponseDTO response = candidateService.createCandidate(requestDTO);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(
+                ApiResponse.success(response, "Candidate created successfully"),
+                HttpStatus.CREATED
+        );
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<ApiResponse<List<CandidateResponseDTO>>> bulkRegister(@Valid @RequestBody BulkCandidateRequestDTO bulkRequestDTO) {
+        List<CandidateResponseDTO> response = candidateService.bulkRegisterCandidates(bulkRequestDTO);
+        return new ResponseEntity<>(
+                ApiResponse.success(response, "Bulk registration successful"),
+                HttpStatus.CREATED
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CandidateResponseDTO> getCandidateById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<CandidateResponseDTO>> getCandidateById(@PathVariable UUID id) {
         CandidateResponseDTO response = candidateService.getCandidateById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response, "Candidate retrieved successfully"));
     }
 
     @GetMapping
-    public ResponseEntity<Page<CandidateResponseDTO>> getAllCandidates(Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<CandidateResponseDTO>>> getAllCandidates(Pageable pageable) {
         Page<CandidateResponseDTO> response = candidateService.getAllCandidates(pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response, "Candidates retrieved successfully"));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CandidateResponseDTO> updateCandidate(
+    public ResponseEntity<ApiResponse<CandidateResponseDTO>> updateCandidate(
             @PathVariable UUID id, 
-            @Valid @RequestBody CandidateRequestDTO requestDTO) {
-        CandidateResponseDTO response = candidateService.updateCandidate(id, requestDTO);
-        return ResponseEntity.ok(response);
+            @Valid @RequestBody CandidateUpdateDTO updateDTO) {
+        CandidateResponseDTO response = candidateService.updateCandidate(id, updateDTO);
+        return ResponseEntity.ok(ApiResponse.success(response, "Candidate updated successfully"));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<CandidateResponseDTO>> updateStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody CandidateStatusUpdateDTO statusUpdateDTO) {
+        CandidateResponseDTO response = candidateService.updateCandidateStatus(id, statusUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(response, "Candidate status updated successfully"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCandidate(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCandidate(@PathVariable UUID id) {
         candidateService.deleteCandidate(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Candidate deleted successfully"));
     }
 }

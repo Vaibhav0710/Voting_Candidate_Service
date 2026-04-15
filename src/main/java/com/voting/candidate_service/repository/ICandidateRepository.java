@@ -15,4 +15,7 @@ public interface ICandidateRepository extends JpaRepository<Candidate, UUID> {
 
     // Fetch all active candidates (paginated)
     Page<Candidate> findAllByIsDeletedFalse(Pageable pageable);
+
+    // Check if a candidate with the same name exists in a specific election
+    boolean existsByNameAndElectionIdAndIsDeletedFalse(String name, UUID electionId);
 }
