@@ -1,4 +1,4 @@
-package com.voting.candidate_service.dto;
+package com.voting.candidateservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

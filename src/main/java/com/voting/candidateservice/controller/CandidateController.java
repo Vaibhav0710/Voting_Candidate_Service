@@ -1,7 +1,7 @@
-package com.voting.candidate_service.controller;
+package com.voting.candidateservice.controller;
 
-import com.voting.candidate_service.dto.*;
-import com.voting.candidate_service.service.ICandidateService;
+import com.voting.candidateservice.dto.*;
+import com.voting.candidateservice.service.CandidateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,24 +18,24 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CandidateController {
 
-    private final ICandidateService candidateService;
+    private final CandidateService candidateService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CandidateResponseDTO>> createCandidate(@Valid @RequestBody CandidateRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponse<CandidateResponseDTO>> createCandidate(
+            @Valid @RequestBody CandidateRequestDTO requestDTO) {
         CandidateResponseDTO response = candidateService.createCandidate(requestDTO);
         return new ResponseEntity<>(
                 ApiResponse.success(response, "Candidate created successfully"),
-                HttpStatus.CREATED
-        );
+                HttpStatus.CREATED);
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<ApiResponse<List<CandidateResponseDTO>>> bulkRegister(@Valid @RequestBody BulkCandidateRequestDTO bulkRequestDTO) {
+    public ResponseEntity<ApiResponse<List<CandidateResponseDTO>>> bulkRegister(
+            @Valid @RequestBody BulkCandidateRequestDTO bulkRequestDTO) {
         List<CandidateResponseDTO> response = candidateService.bulkRegisterCandidates(bulkRequestDTO);
         return new ResponseEntity<>(
                 ApiResponse.success(response, "Bulk registration successful"),
-                HttpStatus.CREATED
-        );
+                HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
@@ -52,7 +52,7 @@ public class CandidateController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CandidateResponseDTO>> updateCandidate(
-            @PathVariable UUID id, 
+            @PathVariable UUID id,
             @Valid @RequestBody CandidateUpdateDTO updateDTO) {
         CandidateResponseDTO response = candidateService.updateCandidate(id, updateDTO);
         return ResponseEntity.ok(ApiResponse.success(response, "Candidate updated successfully"));

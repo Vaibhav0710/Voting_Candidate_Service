@@ -1,6 +1,6 @@
-package com.voting.candidate_service.dto;
+package com.voting.candidateservice.dto;
 
-import com.voting.candidate_service.model.enums.CandidateStatus;
+import com.voting.candidateservice.model.enums.CandidateStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

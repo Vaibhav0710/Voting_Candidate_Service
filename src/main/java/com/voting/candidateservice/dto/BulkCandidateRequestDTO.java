@@ -1,4 +1,4 @@
-package com.voting.candidate_service.dto;
+package com.voting.candidateservice.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;

@@ -1,11 +1,11 @@
-package com.voting.candidate_service.service;
+package com.voting.candidateservice.service;
 
-import com.voting.candidate_service.dto.*;
-import com.voting.candidate_service.exception.DuplicateResourceException;
-import com.voting.candidate_service.exception.ResourceNotFoundException;
-import com.voting.candidate_service.mapper.CandidateMapper;
-import com.voting.candidate_service.model.Candidate;
-import com.voting.candidate_service.repository.ICandidateRepository;
+import com.voting.candidateservice.dto.*;
+import com.voting.candidateservice.exception.DuplicateResourceException;
+import com.voting.candidateservice.exception.ResourceNotFoundException;
+import com.voting.candidateservice.mapper.CandidateMapper;
+import com.voting.candidateservice.model.Candidate;
+import com.voting.candidateservice.repository.CandidateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,17 +18,19 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CandidateService implements ICandidateService {
+public class CandidateServiceImpl implements CandidateService {
 
-    private final ICandidateRepository candidateRepository;
+    private final CandidateRepository candidateRepository;
     private final CandidateMapper candidateMapper;
 
     @Override
     @Transactional
     public CandidateResponseDTO createCandidate(CandidateRequestDTO requestDTO) {
         // Prevent double registration
-        if (candidateRepository.existsByNameAndElectionIdAndIsDeletedFalse(requestDTO.getName(), requestDTO.getElectionId())) {
-            throw new DuplicateResourceException("Candidate with name " + requestDTO.getName() + " already registered for this election");
+        if (candidateRepository.existsByNameAndElectionIdAndIsDeletedFalse(requestDTO.getName(),
+                requestDTO.getElectionId())) {
+            throw new DuplicateResourceException(
+                    "Candidate with name " + requestDTO.getName() + " already registered for this election");
         }
 
         Candidate candidate = candidateMapper.toEntity(requestDTO);
@@ -52,10 +54,10 @@ public class CandidateService implements ICandidateService {
     @Transactional
     public CandidateResponseDTO updateCandidate(UUID id, CandidateUpdateDTO updateDTO) {
         Candidate candidate = findCandidateById(id);
-        
+
         candidate.setName(updateDTO.getName());
         candidate.setParty(updateDTO.getParty());
-        
+
         Candidate updatedCandidate = candidateRepository.save(candidate);
         return candidateMapper.toResponseDTO(updatedCandidate);
     }
@@ -89,7 +91,7 @@ public class CandidateService implements ICandidateService {
     private Candidate findCandidateById(UUID id) {
         Candidate candidate = candidateRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidate not found with id: " + id));
-        
+
         if (candidate.isDeleted()) {
             throw new ResourceNotFoundException("Candidate not found with id: " + id);
         }

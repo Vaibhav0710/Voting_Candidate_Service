@@ -1,8 +1,8 @@
-package com.voting.candidate_service.mapper;
+package com.voting.candidateservice.mapper;
 
-import com.voting.candidate_service.dto.CandidateRequestDTO;
-import com.voting.candidate_service.dto.CandidateResponseDTO;
-import com.voting.candidate_service.model.Candidate;
+import com.voting.candidateservice.dto.CandidateRequestDTO;
+import com.voting.candidateservice.dto.CandidateResponseDTO;
+import com.voting.candidateservice.model.Candidate;
 import org.springframework.stereotype.Component;
 
 @Component
