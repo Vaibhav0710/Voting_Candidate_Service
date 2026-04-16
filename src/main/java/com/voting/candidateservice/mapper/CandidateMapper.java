@@ -24,7 +24,7 @@ public class CandidateMapper {
             return null;
         }
         return CandidateResponseDTO.builder()
-                .id(candidate.getId())
+                .id(candidate.getExternalId())
                 .name(candidate.getName())
                 .party(candidate.getParty())
                 .electionId(candidate.getElectionId())

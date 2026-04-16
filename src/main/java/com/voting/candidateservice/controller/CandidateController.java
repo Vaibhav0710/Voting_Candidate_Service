@@ -71,4 +71,32 @@ public class CandidateController {
         candidateService.deleteCandidate(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Candidate deleted successfully"));
     }
+
+    @GetMapping("/election/{electionId}")
+    public ResponseEntity<ApiResponse<List<CandidateResponseDTO>>> getCandidatesByElection(
+            @PathVariable UUID electionId) {
+        List<CandidateResponseDTO> response = candidateService.getCandidatesByElection(electionId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Candidates for election retrieved successfully"));
+    }
+
+    @GetMapping("/election/{electionId}/active")
+    public ResponseEntity<ApiResponse<List<CandidateResponseDTO>>> getActiveCandidatesByElection(
+            @PathVariable UUID electionId) {
+        List<CandidateResponseDTO> response = candidateService.getActiveCandidatesByElection(electionId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Active candidates for election retrieved successfully"));
+    }
+
+    @GetMapping("/{id}/exists")
+    public ResponseEntity<ApiResponse<Boolean>> candidateExists(@PathVariable UUID id) {
+        boolean exists = candidateService.candidateExists(id);
+        return ResponseEntity.ok(ApiResponse.success(exists, "Check completed"));
+    }
+
+    @GetMapping("/{id}/validate")
+    public ResponseEntity<ApiResponse<CandidateValidationDTO>> validateCandidate(
+            @PathVariable UUID id,
+            @RequestParam UUID electionId) {
+        CandidateValidationDTO response = candidateService.validateCandidateForElection(id, electionId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Validation completed"));
+    }
 }

@@ -5,6 +5,7 @@ import com.voting.candidateservice.exception.DuplicateResourceException;
 import com.voting.candidateservice.exception.ResourceNotFoundException;
 import com.voting.candidateservice.mapper.CandidateMapper;
 import com.voting.candidateservice.model.Candidate;
+import com.voting.candidateservice.model.enums.CandidateStatus;
 import com.voting.candidateservice.repository.CandidateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,7 +41,7 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public CandidateResponseDTO getCandidateById(UUID id) {
-        Candidate candidate = findCandidateById(id);
+        Candidate candidate = findCandidateByExternalId(id);
         return candidateMapper.toResponseDTO(candidate);
     }
 
@@ -53,7 +54,7 @@ public class CandidateServiceImpl implements CandidateService {
     @Override
     @Transactional
     public CandidateResponseDTO updateCandidate(UUID id, CandidateUpdateDTO updateDTO) {
-        Candidate candidate = findCandidateById(id);
+        Candidate candidate = findCandidateByExternalId(id);
 
         candidate.setName(updateDTO.getName());
         candidate.setParty(updateDTO.getParty());
@@ -65,7 +66,7 @@ public class CandidateServiceImpl implements CandidateService {
     @Override
     @Transactional
     public CandidateResponseDTO updateCandidateStatus(UUID id, CandidateStatusUpdateDTO statusUpdateDTO) {
-        Candidate candidate = findCandidateById(id);
+        Candidate candidate = findCandidateByExternalId(id);
         candidate.setStatus(statusUpdateDTO.getStatus());
         Candidate updatedCandidate = candidateRepository.save(candidate);
         return candidateMapper.toResponseDTO(updatedCandidate);
@@ -82,19 +83,71 @@ public class CandidateServiceImpl implements CandidateService {
     @Override
     @Transactional
     public void deleteCandidate(UUID id) {
-        Candidate candidate = findCandidateById(id);
+        Candidate candidate = findCandidateByExternalId(id);
         candidate.setDeleted(true);
         candidateRepository.save(candidate);
     }
 
-    // Helper method to find candidate or throw exception
-    private Candidate findCandidateById(UUID id) {
-        Candidate candidate = candidateRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found with id: " + id));
+    @Override
+    public List<CandidateResponseDTO> getCandidatesByElection(UUID electionId) {
+        return candidateRepository.findByElectionIdAndIsDeletedFalse(electionId)
+                .stream()
+                .map(candidateMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
 
-        if (candidate.isDeleted()) {
-            throw new ResourceNotFoundException("Candidate not found with id: " + id);
+    @Override
+    public List<CandidateResponseDTO> getActiveCandidatesByElection(UUID electionId) {
+        return candidateRepository.findByElectionIdAndStatusAndIsDeletedFalse(electionId,
+                        CandidateStatus.ACTIVE)
+                .stream()
+                .map(candidateMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean candidateExists(UUID id) {
+        return candidateRepository.existsByExternalIdAndIsDeletedFalse(id);
+    }
+
+    @Override
+    public CandidateValidationDTO validateCandidateForElection(UUID candidateId, UUID electionId) {
+        Candidate candidate = candidateRepository.findByExternalIdAndIsDeletedFalse(candidateId)
+                .orElse(null);
+
+        if (candidate == null || candidate.isDeleted()) {
+            return CandidateValidationDTO.builder()
+                    .candidateId(candidateId)
+                    .electionId(electionId)
+                    .isValid(false)
+                    .message("Candidate not found")
+                    .build();
         }
-        return candidate;
+
+        if (!candidate.getElectionId().equals(electionId)) {
+            return CandidateValidationDTO.builder()
+                    .candidateId(candidateId)
+                    .electionId(electionId)
+                    .isValid(false)
+                    .currentStatus(candidate.getStatus())
+                    .message("Candidate does not belong to this election")
+                    .build();
+        }
+
+        boolean isActive = candidate.getStatus() == CandidateStatus.ACTIVE;
+
+        return CandidateValidationDTO.builder()
+                .candidateId(candidateId)
+                .electionId(electionId)
+                .isValid(isActive)
+                .currentStatus(candidate.getStatus())
+                .message(isActive ? "Valid" : "Candidate is " + candidate.getStatus())
+                .build();
+    }
+
+    // Helper method to find candidate by Public ID or throw exception
+    private Candidate findCandidateByExternalId(UUID externalId) {
+        return candidateRepository.findByExternalIdAndIsDeletedFalse(externalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidate not found with id: " + externalId));
     }
 }

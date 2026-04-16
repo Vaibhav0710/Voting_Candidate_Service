@@ -4,7 +4,7 @@
 > **Service:** `candidate-service`  
 > **Tech:** Java 17 · Spring Boot 4.x · PostgreSQL · Spring Cloud · Maven  
 > **Started:** April 14, 2026  
-> **Status:** 🟢 Day 3 Complete (Architectural Foundation & Refactoring)
+> **Status:** 🟣 Day 4 Complete (PostgreSQL Integration & Phase 2 APIs)
 
 ---
 
@@ -125,7 +125,8 @@ src/main/java/com/voting/candidateservice/
 - [x] 1.4 — Add `updatedAt` field (`@UpdateTimestamp`)
 - [x] 1.5 — Add `isDeleted` boolean (default `false`) for soft-delete
 - [x] 1.6 — Add unique constraint on `(name, election_id)` to `@Table` annotation
-- [x] 1.7 — Verify entity compiles and JPA auto-DDL creates correct schema
+- [x] 1.7 — Implement Public ID Pattern (Internal `Long` PK, External `UUID`)
+- [x] 1.8 — Verify entity compiles and JPA auto-DDL creates correct schema
 
 ---
 
@@ -133,7 +134,7 @@ src/main/java/com/voting/candidateservice/
 - [x] 2.1 — Update `CandidateResponseDTO` → add `status`, `createdAt`, `updatedAt` fields
 - [x] 2.2 — Create `CandidateUpdateDTO` (name, party)
 - [x] 2.3 — Create `CandidateStatusUpdateDTO` (status)
-- [ ] 2.4 — Create `CandidateValidationDTO` (Feign used by Voting Service)
+- [x] 2.4 — Create `CandidateValidationDTO` (Feign used by Voting Service)
 - [x] 2.5 — Create `BulkCandidateRequestDTO` (`List<CandidateRequestDTO> candidates`)
 - [x] 2.6 — Create `ApiResponse<T>` generic wrapper
 
@@ -148,7 +149,7 @@ src/main/java/com/voting/candidateservice/
 ### Step 5: Repository Enhancement
 - [x] 5.1 — Add `Optional<Candidate> findByIdAndIsDeletedFalse(UUID id)`
 - [x] 5.2 — Add `List<Candidate> findByElectionIdAndIsDeletedFalse(UUID electionId)`
-- [ ] 5.3 — Add `List<Candidate> findByElectionIdAndStatusAndIsDeletedFalse`
+- [x] 5.3 — Add `List<Candidate> findByElectionIdAndStatusAndIsDeletedFalse`
 - [x] 5.4 — Add `boolean existsByIdAndIsDeletedFalse(UUID id)`
 - [x] 5.5 — Add `boolean existsByNameAndElectionIdAndIsDeletedFalse(String name, UUID electionId)`
 - [x] 5.6 — Add `Page<Candidate> findAllByIsDeletedFalse(Pageable pageable)`
@@ -168,16 +169,16 @@ src/main/java/com/voting/candidateservice/
 ---
 
 ### Step 7: Service Layer — Phase 2 (Election-Scoped)
-- [ ] 7.1 — Implement `getCandidatesByElection(UUID electionId)`
-- [ ] 7.2 — Implement `candidateExists(UUID id)` → returns boolean
-- [ ] 7.3 — Implement `validateCandidateForElection(UUID candidateId, UUID electionId)` → returns `CandidateValidationDTO`
+- [x] 7.1 — Implement `getCandidatesByElection(UUID electionId)`
+- [x] 7.2 — Implement `candidateExists(UUID id)` → returns boolean
+- [x] 7.3 — Implement `validateCandidateForElection(UUID candidateId, UUID electionId)` → returns `CandidateValidationDTO`
 
 ---
 
 ### Step 8: Service Layer — Phase 3 & 4 (Bulk + Status)
 - [x] 8.1 — Implement `bulkRegisterCandidates(BulkCandidateRequestDTO)` 
 - [x] 8.2 — Implement `updateCandidateStatus(UUID, CandidateStatusUpdateDTO)`
-- [ ] 8.3 — Implement `getActiveCandidatesByElection(UUID electionId)`
+- [x] 8.3 — Implement `getActiveCandidatesByElection(UUID electionId)`
 
 ---
 
@@ -185,9 +186,10 @@ src/main/java/com/voting/candidateservice/
 > File: `CandidateController.java`
 
 - [x] 9.1 — Phase 1: `POST /`, `GET /{id}`, `GET /`, `PUT /{id}`, `DELETE /{id}`
-- [ ] 9.2 — Phase 2: `GET /election/{electionId}`, `GET /{id}/exists`, `GET /{id}/validate`
+- [x] 9.2 — Phase 2: `GET /election/{electionId}`, `GET /{id}/exists`, `GET /{id}/validate`
 - [x] 9.3 — Phase 3: `POST /bulk`, `GET /search` (Partial)
-- [x] 9.4 — Phase 4: `PATCH /{id}/status`, `GET /election/{electionId}/active` (Pending)
+- [x] 9.4 — Phase 4: `PATCH /{id}/status`, `GET /election/{electionId}/active`
+- [x] 9.5 — Add Swagger/OpenAPI UI integration
 - [x] 9.5 — Wrap all responses in `ApiResponse<T>`
 - [x] 9.6 — REST standard HTTP status codes
 
@@ -196,14 +198,12 @@ src/main/java/com/voting/candidateservice/
 ### Step 10: Configuration
 > Files: `application.yml`, `AppConfig.java`
 
-- [ ] 10.1 — Create `application.yml` replacing `application.properties`
+- [x] 10.1 — Create `application.yml` replacing `application.properties`
   - PostgreSQL datasource (candidate_service_db)
-  - JPA: `ddl-auto: update`, `show-sql: true`
+  - Security: Environment variable placeholders for credentials 🔐
+  - JPA: `ddl-auto: create/update`, `show-sql: true`
   - Eureka client config
-  - Server port (e.g., `8082`)
-  - Logging levels
-- [ ] 10.2 — Create `AppConfig.java` for CORS config (if needed before Gateway)
-- [ ] 10.3 — Verify service starts and connects to PostgreSQL
+- [x] 10.3 — Verify service starts and connects to PostgreSQL
 - [ ] 10.4 — Verify Eureka registration
 
 ---
@@ -303,5 +303,5 @@ CREATE INDEX idx_candidates_election_status ON candidates(election_id, status);
 
 ---
 
-> **Last Updated:** April 15, 2026  
-> **Next Step:** Phase 2 — Election-Scoped APIs & Service Discovery (Eureka)
+> **Last Updated:** April 16, 2026  
+> **Next Step:** Day 5 — Eureka Server & Service Discovery
