@@ -19,8 +19,11 @@ import java.util.UUID;
 public class Candidate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "external_id", unique = true, nullable = false, updatable = false)
+    private UUID externalId;
 
     @Column(nullable = false)
     private String name;
@@ -47,4 +50,11 @@ public class Candidate {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void ensureExternalId() {
+        if (externalId == null) {
+            this.externalId = UUID.randomUUID();
+        }
+    }
 }

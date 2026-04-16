@@ -21,5 +21,13 @@ public interface CandidateService {
 
     List<CandidateResponseDTO> bulkRegisterCandidates(BulkCandidateRequestDTO bulkRequestDTO);
 
+    List<CandidateResponseDTO> getCandidatesByElection(UUID electionId);
+
+    List<CandidateResponseDTO> getActiveCandidatesByElection(UUID electionId);
+
+    boolean candidateExists(UUID id);
+
+    CandidateValidationDTO validateCandidateForElection(UUID candidateId, UUID electionId);
+
     void deleteCandidate(UUID id);
 }
