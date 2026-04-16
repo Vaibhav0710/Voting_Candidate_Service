@@ -22,8 +22,9 @@ The **Candidate Service** manages the lifecycle of election candidates — regis
 - ✅ soft-delete implementation
 - ✅ Bulk candidate registration
 - ✅ Status management (ACTIVE / DISQUALIFIED / WITHDRAWN)
-- 🔜 Election-scoped candidate queries
-- 🔜 Candidate existence & validation checks (Feign)
+- ✅ Election-scoped candidate queries
+- ✅ Candidate existence & validation checks (Feign)
+- ✅ Swagger/OpenAPI documentation
 - 🔜 Kafka event publishing
 
 ---
@@ -66,12 +67,13 @@ The **Candidate Service** manages the lifecycle of election candidates — regis
 | Component | Technology |
 |-----------|-----------|
 | Language | Java 17 |
-| Framework | Spring Boot 4.0.5 |
+| Framework | Spring Boot 4.x |
 | Database | PostgreSQL (dedicated: `candidateservice_db`) |
 | ORM | Spring Data JPA / Hibernate |
+| Documentation | Swagger UI / OpenAPI 3.0 |
 | Validation | Jakarta Bean Validation (`spring-boot-starter-validation`) |
 | Service Discovery | Eureka Client |
-| Messaging | Apache Kafka (event publishing) |
+| Messaging | Apache Kafka (planned) |
 | Caching | Redis (planned) |
 | Build Tool | Maven |
 | Boilerplate | Lombok |
@@ -101,9 +103,9 @@ http://localhost:8082/api/v1/candidates
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `GET` | `/election/{electionId}` | Get candidates for an election | 🔜 |
-| `GET` | `/{id}/exists` | Check if candidate exists | 🔜 |
-| `GET` | `/{id}/validate?electionId=X` | Validate candidate for election | 🔜 |
+| `GET` | `/election/{electionId}` | Get candidates for an election | ✅ |
+| `GET` | `/{id}/exists` | Check if candidate exists (lightweight) | ✅ |
+| `GET` | `/{id}/validate?electionId=X` | Validate candidate for election | ✅ |
 
 #### Phase 3 — Bulk & Search
 
@@ -117,7 +119,7 @@ http://localhost:8082/api/v1/candidates
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
 | `PATCH` | `/{id}/status` | Change candidate status | ✅ |
-| `GET` | `/election/{electionId}/active` | Get active candidates only | 🔜 |
+| `GET` | `/election/{electionId}/active` | Get active candidates only | ✅ |
 
 ### Request/Response Examples
 
@@ -230,9 +232,13 @@ http://localhost:8082/api/v1/candidates
 
 **Database:** `candidate_service_db` (isolated — microservices own their data)
 
+### Public ID Pattern (Internal PK vs External UUID)
+The service utilizes a professional masking strategy to hide internal database performance optimizations from the public API.
+
 ```sql
 CREATE TABLE candidates (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              BIGSERIAL PRIMARY KEY, -- Internal PK (High performance)
+    external_id     UUID UNIQUE NOT NULL,  -- Public GUID (Secure/Obfuscated)
     name            VARCHAR(255) NOT NULL,
     party           VARCHAR(255),
     election_id     UUID NOT NULL,
@@ -244,8 +250,7 @@ CREATE TABLE candidates (
     CONSTRAINT uq_candidate_election UNIQUE (name, election_id)
 );
 
-CREATE INDEX idx_candidates_election_id ON candidates(election_id);
-CREATE INDEX idx_candidates_status ON candidates(status);
+CREATE INDEX idx_candidates_external_id ON candidates(external_id);
 CREATE INDEX idx_candidates_election_status ON candidates(election_id, status);
 ```
 
@@ -415,4 +420,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 > **Maintainer:** Vaibhav  
-> **Last Updated:** April 15, 2026
+> **Last Updated:** April 16, 2026
