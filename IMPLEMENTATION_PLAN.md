@@ -4,7 +4,7 @@
 > **Service:** `candidate-service`  
 > **Tech:** Java 17 · Spring Boot 4.x · PostgreSQL · Spring Cloud · Maven  
 > **Started:** April 14, 2026  
-> **Status:** 🟣 Day 4 Complete (PostgreSQL Integration & Phase 2 APIs)
+> **Status:** 🟣 Day 5 Status (Writing Unit Tests)
 
 ---
 
@@ -208,9 +208,9 @@ src/main/java/com/voting/candidateservice/
 
 ---
 
-### Step 11: Testing
-- [ ] 11.1 — Unit tests for `CandidateService` (mock repository)
-- [ ] 11.2 — Integration tests for `CandidateController` (`@WebMvcTest`)
+### Step 11: Testing (Day 5 Focus)
+- [x] 11.1 — Unit tests for `CandidateService` (mock repository)
+- [x] 11.2 — Integration/Unit tests for `CandidateController` (`@WebMvcTest`)
 - [ ] 11.3 — Repository tests (`@DataJpaTest`)
 - [ ] 11.4 — Test all endpoints via Postman / cURL
 - [ ] 11.5 — Test validation errors (blank name, null electionId)
@@ -303,5 +303,5 @@ CREATE INDEX idx_candidates_election_status ON candidates(election_id, status);
 
 ---
 
-> **Last Updated:** April 16, 2026  
-> **Next Step:** Day 5 — Eureka Server & Service Discovery
+> **Last Updated:** April 17, 2026  
+> **Current Step:** Day 5 — Unit and Integration Testing
