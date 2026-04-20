@@ -211,10 +211,10 @@ src/main/java/com/voting/candidateservice/
 ### Step 11: Testing (Day 5 Focus)
 - [x] 11.1 — Unit tests for `CandidateService` (mock repository)
 - [x] 11.2 — Integration/Unit tests for `CandidateController` (`@WebMvcTest`)
-- [ ] 11.3 — Repository tests (`@DataJpaTest`)
-- [ ] 11.4 — Test all endpoints via Postman / cURL
-- [ ] 11.5 — Test validation errors (blank name, null electionId)
-- [ ] 11.6 — Test 404 / 409 exception scenarios
+- [x] 11.3 — Repository tests (`@DataJpaTest`)
+- [x] 11.4 — Test all endpoints via MockMvc/Postman 
+- [x] 11.5 — Test validation errors (blank name, null electionId)
+- [x] 11.6 — Test 404 / 409 exception scenarios
 
 ---
 
@@ -303,5 +303,5 @@ CREATE INDEX idx_candidates_election_status ON candidates(election_id, status);
 
 ---
 
-> **Last Updated:** April 17, 2026  
-> **Current Step:** Day 5 — Unit and Integration Testing
+> **Last Updated:** April 20, 2026  
+> **Current Step:** Day 5 Testing Complete. Up Next: Kafka Integration (Step 12)
