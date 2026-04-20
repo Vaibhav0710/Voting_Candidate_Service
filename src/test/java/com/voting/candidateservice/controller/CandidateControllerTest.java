@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.voting.candidateservice.dto.*;
+import com.voting.candidateservice.exception.DuplicateResourceException;
+import com.voting.candidateservice.exception.GlobalExceptionHandler;
+import com.voting.candidateservice.exception.ResourceNotFoundException;
 import com.voting.candidateservice.model.enums.CandidateStatus;
 import com.voting.candidateservice.service.CandidateService;
 import org.junit.jupiter.api.AfterEach;
@@ -59,6 +62,7 @@ class CandidateControllerTest {
                 mockMvc = MockMvcBuilders.standaloneSetup(candidateController)
                                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                                 .setMessageConverters(converter)
+                                .setControllerAdvice(new GlobalExceptionHandler())
                                 .build();
 
                 requestDTO = CandidateRequestDTO.builder()
@@ -200,6 +204,64 @@ class CandidateControllerTest {
                                 .param("electionId", electionId.toString()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.data.valid").value(true));
+        }
+
+        @Test
+        void createCandidate_ValidationFailed_Returns400_WhenNameBlank() throws Exception {
+                CandidateRequestDTO badRequest = CandidateRequestDTO.builder()
+                                .name("") // Blank name
+                                .party("Some Party")
+                                .electionId(electionId)
+                                .build();
+
+                mockMvc.perform(post("/api/v1/candidates")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(badRequest)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.success").value(false))
+                                .andExpect(jsonPath("$.message").value("Validation failed"))
+                                .andExpect(jsonPath("$.data.name").exists());
+        }
+
+        @Test
+        void createCandidate_ValidationFailed_Returns400_WhenElectionIdNull() throws Exception {
+                CandidateRequestDTO badRequest = CandidateRequestDTO.builder()
+                                .name("Valid Name")
+                                .party("Some Party")
+                                .electionId(null) // Null electionId
+                                .build();
+
+                mockMvc.perform(post("/api/v1/candidates")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(badRequest)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.success").value(false))
+                                .andExpect(jsonPath("$.message").value("Validation failed"))
+                                .andExpect(jsonPath("$.data.electionId").exists());
+        }
+
+        @Test
+        void getCandidateById_Returns404_WhenCandidateNotFound() throws Exception {
+                when(candidateService.getCandidateById(candidateId))
+                                .thenThrow(new ResourceNotFoundException("Candidate not found"));
+
+                mockMvc.perform(get("/api/v1/candidates/{id}", candidateId))
+                                .andExpect(status().isNotFound())
+                                .andExpect(jsonPath("$.success").value(false))
+                                .andExpect(jsonPath("$.message").value("Candidate not found"));
+        }
+
+        @Test
+        void createCandidate_Returns409_WhenDuplicateCandidate() throws Exception {
+                when(candidateService.createCandidate(any()))
+                                .thenThrow(new DuplicateResourceException("Candidate already exists in this election"));
+
+                mockMvc.perform(post("/api/v1/candidates")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(requestDTO)))
+                                .andExpect(status().isConflict())
+                                .andExpect(jsonPath("$.success").value(false))
+                                .andExpect(jsonPath("$.message").value("Candidate already exists in this election"));
         }
 
         /**
