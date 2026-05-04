@@ -2,7 +2,7 @@
 
 > **Project:** Blockchain-Inspired Online Voting System  
 > **Service:** `candidate-service`  
-> **Tech:** Java 17 · Spring Boot 4.x · PostgreSQL · Spring Cloud · Maven  
+> **Tech:** Java 17 · Spring Boot 3.3.x · PostgreSQL · Spring Cloud · Maven  
 > **Started:** April 14, 2026  
 > **Status:** 🟣 Day 5 Status (Writing Unit Tests)
 
