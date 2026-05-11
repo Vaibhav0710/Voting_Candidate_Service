@@ -1,9 +1,9 @@
 spring:
   application:
     name: candidate-service
-  
+
   datasource:
-    url: ${VOTING_DB_URL}
+    url: ${VOTING_DB_URL}/candidateservice_db
     username: ${VOTING_DB_USER}
     password: ${VOTING_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
