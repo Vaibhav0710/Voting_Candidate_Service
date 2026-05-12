@@ -19,10 +19,34 @@ Prep questions for technical interviews regarding the Candidate microservice.
 ### Q5: Why is the `electionId` passed as a UUID?
 > **Answer**: It ensures that we don't leak information about the total number of elections in the system and prevents attackers from "walking" the database to find private or upcoming election data. It also allows for easier integration with external systems that might use non-sequential IDs.
 
+### Q6: Why is it beneficial to decouple this from the User Service?
+> **Answer**: Decoupling ensures that candidate management doesn't depend on the availability of the User Service (and vice versa). It allows for independent scaling, better fault isolation, and specialized data modeling for election-specific needs.
+
+### Q7: Explain the CAP Theorem in the context of this voting system.
+> **Answer**: In a distributed system, we must choose between **Consistency** and **Availability** during a network partition. For voting, we typically prioritize **Strict Consistency** (ensure every vote is valid and not duplicated) over Availability (blocking votes if consistency cannot be guaranteed).
+
+### Q8: How do you handle database schema changes?
+> **Answer**: We use tools like **Flyway** or **Liquibase** for database migrations. This ensures that schema changes are versioned, automated, and consistent across all environments (dev, staging, production).
+
+### Q9: How do you distinguish between Unit and Integration tests here?
+> **Answer**: 
+> - **Unit Tests**: Focus on business logic (e.g., candidate validation) in isolation using Mockito to mock dependencies.
+> - **Integration Tests**: Focus on the interaction with the database or other services, typically using `@DataJpaTest` or `Testcontainers` to run a real PostgreSQL instance.
+
+### Q10: How does this service participate in Service Discovery?
+> **Answer**: It is a **Eureka Client**. At startup, it registers its IP and port with the Eureka Server. The API Gateway then uses this registry to route requests to `/api/v1/candidates/**` to an available instance of this service.
+
+---
 ## 🚀 Advanced Discussion Topics
 - **Eventual Consistency**: How Kafka helps keep the Voting Service's candidate cache in sync.
 - **Bulk Operations**: Optimizing `batch inserts` for importing large candidate lists.
-- **Data Governance**: Ensuring candidates' personal data (if any) is handled according to privacy laws.
+- **Audit Logging**: Tracking every change made to a candidate's profile for transparency.
+
+### Q11: How do you handle Distributed Data Consistency across services?
+> **Answer**: We follow the **Database-per-Service** pattern. For operations that span multiple services (like updating a candidate and notifying the voting service), we prefer **Eventual Consistency** via events (Kafka). We also use **Idempotency keys** to ensure that retries don't create duplicate data.
+
+### Q12: How do you monitor the health and performance of this service?
+> **Answer**: We use **Spring Boot Actuator** to expose metrics. These metrics (CPU, Memory, DB connection pool status) are collected by **Prometheus** and visualized in **Grafana**. We also use **Sleuth/Zipkin** for distributed tracing to find performance bottlenecks in cross-service calls.
 
 ---
 > **Back to [Service Overview](SERVICE_OVERVIEW.md)**
