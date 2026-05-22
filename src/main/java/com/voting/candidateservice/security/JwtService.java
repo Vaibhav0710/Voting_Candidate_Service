@@ -1,13 +1,17 @@
 package com.voting.candidateservice.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,10 +22,16 @@ import java.util.UUID;
  * authentication.
  */
 @Service
+@Slf4j
 public class JwtService {
 
-    @Value("${app.jwt.secret}")
-    private String secret;
+    private final SecretKey signingKey;
+
+    public JwtService(@Value("${app.jwt.secret}") String secret) {
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+        log.info("JwtService initialized — algorithm=HS256 (read-only mode)");
+    }
 
     /**
      * Extracts and validates the principal from the token.
@@ -32,7 +42,9 @@ public class JwtService {
     public Optional<JwtPrincipal> getPrincipalFromToken(String token) {
         try {
             Claims claims = extractAllClaims(token);
+
             if (isTokenExpired(claims)) {
+                log.warn("Token expired for subject: {}", claims.getSubject());
                 return Optional.empty();
             }
 
@@ -41,22 +53,24 @@ public class JwtService {
             String role = claims.get("role", String.class);
 
             return Optional.of(new JwtPrincipal(userId, username, role));
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expired: {}", e.getMessage());
+            return Optional.empty();
+        } catch (SecurityException | MalformedJwtException e) {
+            log.warn("Invalid JWT token: {}", e.getMessage());
+            return Optional.empty();
         } catch (Exception e) {
+            log.error("Unexpected error parsing JWT: {}", e.getMessage());
             return Optional.empty();
         }
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        return Jwts.parser()
+                .verifyWith(signingKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private boolean isTokenExpired(Claims claims) {
