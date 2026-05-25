@@ -23,6 +23,7 @@ public class CandidateServiceImpl implements CandidateService {
 
     private final CandidateRepository candidateRepository;
     private final CandidateMapper candidateMapper;
+    private final CandidateEventProducer candidateEventProducer;
 
     @Override
     @Transactional
@@ -36,7 +37,9 @@ public class CandidateServiceImpl implements CandidateService {
 
         Candidate candidate = candidateMapper.toEntity(requestDTO);
         Candidate savedCandidate = candidateRepository.save(candidate);
-        return candidateMapper.toResponseDTO(savedCandidate);
+        CandidateResponseDTO response = candidateMapper.toResponseDTO(savedCandidate);
+        candidateEventProducer.publishCandidateCreated(response);
+        return response;
     }
 
     @Override
@@ -69,7 +72,9 @@ public class CandidateServiceImpl implements CandidateService {
         Candidate candidate = findCandidateByExternalId(id);
         candidate.setStatus(statusUpdateDTO.getStatus());
         Candidate updatedCandidate = candidateRepository.save(candidate);
-        return candidateMapper.toResponseDTO(updatedCandidate);
+        CandidateResponseDTO response = candidateMapper.toResponseDTO(updatedCandidate);
+        candidateEventProducer.publishCandidateStatusChanged(response);
+        return response;
     }
 
     @Override
@@ -86,6 +91,7 @@ public class CandidateServiceImpl implements CandidateService {
         Candidate candidate = findCandidateByExternalId(id);
         candidate.setDeleted(true);
         candidateRepository.save(candidate);
+        candidateEventProducer.publishCandidateDeleted(candidateMapper.toResponseDTO(candidate));
     }
 
     @Override
