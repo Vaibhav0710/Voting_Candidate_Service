@@ -29,9 +29,9 @@ The **Candidate Service** manages the complete lifecycle of election candidates 
 - ✅ Swagger/OpenAPI documentation
 - ✅ Unit + Integration tests (32 tests passing)
 - ✅ Sample data seeding (`DataSeeder`)
-- 🔜 Kafka event publishing
+- ✅ Kafka event publishing
+- ✅ Spring Security + JWT
 - 🔜 Redis caching
-- 🔜 Spring Security + JWT
 
 ---
 
@@ -599,12 +599,12 @@ eureka:
 
 | Service | Port | Description | Status |
 |---------|------|-------------|--------|
-| User Service | 8081 | Authentication, JWT, roles | 🔜 Planned |
-| **Candidate Service** | **8082** | **Candidate lifecycle management** | **✅ Complete (Milestone 1)** |
-| Voting Service | 8083 | Vote casting, hash chaining | 🔜 Planned |
-| Result Service | 8084 | Real-time vote aggregation | 🔜 Planned |
-| API Gateway | 8080 | Routing, rate limiting | 🔜 Planned |
-| Eureka Server | 8761 | Service discovery | 🔜 Planned |
+| User Service | 8081 | Authentication, JWT, roles | ✅ Complete |
+| **Candidate Service** | **8082** | **Candidate lifecycle management** | **✅ Complete** |
+| Voting Service | 8083 | Vote casting, hash chaining | ✅ Complete |
+| Result Service | 8084 | Real-time vote aggregation | ✅ Complete |
+| API Gateway | 8080 | Routing, rate limiting | ✅ Complete |
+| Eureka Server | 8761 | Service discovery | ✅ Complete |
 
 ---
 
@@ -615,4 +615,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 > **Maintainer:** Vaibhav Jain  
-> **Last Updated:** April 21, 2026
+> **Last Updated:** May 29, 2026
