@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class CandidateController {
     private final CandidateService candidateService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CandidateResponseDTO>> createCandidate(
             @Valid @RequestBody CandidateRequestDTO requestDTO) {
         CandidateResponseDTO response = candidateService.createCandidate(requestDTO);
@@ -30,6 +32,7 @@ public class CandidateController {
     }
 
     @PostMapping("/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<CandidateResponseDTO>>> bulkRegister(
             @Valid @RequestBody BulkCandidateRequestDTO bulkRequestDTO) {
         List<CandidateResponseDTO> response = candidateService.bulkRegisterCandidates(bulkRequestDTO);
@@ -51,6 +54,7 @@ public class CandidateController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CandidateResponseDTO>> updateCandidate(
             @PathVariable UUID id,
             @Valid @RequestBody CandidateUpdateDTO updateDTO) {
@@ -59,6 +63,7 @@ public class CandidateController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CandidateResponseDTO>> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody CandidateStatusUpdateDTO statusUpdateDTO) {
@@ -67,6 +72,7 @@ public class CandidateController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCandidate(@PathVariable UUID id) {
         candidateService.deleteCandidate(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Candidate deleted successfully"));

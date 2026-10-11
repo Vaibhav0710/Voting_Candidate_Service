@@ -11,29 +11,49 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        # Consumers read plain JSON; no Java class names in headers
+        spring.json.add.type.headers: false
+        # Fail fast (5 s, default 60 s) when the broker is down; the change is already committed
+        max.block.ms: 5000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
 
 server:
   port: 8082
 
-# Eureka Client Config (Ready for when we enable server)
+# Eureka Client Config
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
     enabled: true
 
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION} # 24 hours in ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, info
+  endpoint:
+    health:
+      probes:
+        enabled: true

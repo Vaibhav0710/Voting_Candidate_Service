@@ -1,19 +1,17 @@
 package com.voting.candidateservice;
 
+import com.voting.candidateservice.service.CandidateEventProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.cloud.compatibility-verifier.enabled=false"
-})
+@ActiveProfiles("test")
 class CandidateServiceApplicationTests {
+
+    @MockBean
+    private CandidateEventProducer candidateEventProducer;
 
     @Test
     void contextLoads() {

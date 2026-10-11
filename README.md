@@ -6,7 +6,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.6-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.3-blue.svg)](https://spring.io/projects/spring-cloud)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
-[![Tests](https://img.shields.io/badge/Tests-32%20Passing-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-58%20Passing-success.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -27,11 +27,12 @@ The **Candidate Service** manages the complete lifecycle of election candidates 
 - ✅ Election-scoped candidate queries
 - ✅ Candidate existence & validation endpoints (for Feign)
 - ✅ Swagger/OpenAPI documentation
-- ✅ Unit + Integration tests (32 tests passing)
+- ✅ Unit + Integration tests (58 tests passing)
 - ✅ Sample data seeding (`DataSeeder`)
-- ✅ Kafka event publishing
-- ✅ Spring Security + JWT
-- 🔜 Redis caching
+- ✅ Kafka event publishing (keyed by candidate id, sent only after the DB commit)
+- ✅ Spring Security + JWT (writes need ADMIN; JSON 401/403; 500s never leak details)
+- ✅ Redis caching of candidate reads (10 min TTL, evicted on every write, falls back to the DB if Redis fails)
+- ✅ Input limits (name/party ≤ 100 chars, bulk ≤ 500 candidates)
 
 ---
 
@@ -66,7 +67,7 @@ The **Candidate Service** manages the complete lifecycle of election candidates 
 | **Voting Service** | OpenFeign (sync) | `GET /{id}/validate?electionId=X` | Full validation (exists + election + active) |
 | **Result Service** | OpenFeign (sync) | `GET /election/{electionId}` | Candidate names/parties for results |
 | **Result Service** | OpenFeign (sync) | `GET /election/{electionId}/active` | Active candidates only |
-| **Voting Service** | Kafka (async) 🔜 | Listens to `candidate.*` topics | Cache invalidation on status changes |
+| **Voting Service** | Kafka (async) | Listens to `candidate.*` topics | Keeps its candidate status cache current (used if this service is down) |
 
 ---
 
@@ -106,11 +107,11 @@ http://localhost:8082/swagger-ui.html
 
 | Method | Endpoint | Description | Status Code | Auth |
 |--------|----------|-------------|-------------|------|
-| `POST` | `/api/v1/candidates` | Register a new candidate | 201 | ADMIN 🔜 |
+| `POST` | `/api/v1/candidates` | Register a new candidate | 201 | ADMIN |
 | `GET` | `/api/v1/candidates/{id}` | Get candidate by public UUID | 200 | PUBLIC |
 | `GET` | `/api/v1/candidates` | List all candidates (paginated) | 200 | PUBLIC |
-| `PUT` | `/api/v1/candidates/{id}` | Update candidate details | 200 | ADMIN 🔜 |
-| `DELETE` | `/api/v1/candidates/{id}` | Soft-delete a candidate | 200 | ADMIN 🔜 |
+| `PUT` | `/api/v1/candidates/{id}` | Update candidate details | 200 | ADMIN |
+| `DELETE` | `/api/v1/candidates/{id}` | Soft-delete a candidate | 200 | ADMIN |
 
 #### Phase 2 — Election-Scoped (Inter-Service)
 
@@ -124,13 +125,13 @@ http://localhost:8082/swagger-ui.html
 
 | Method | Endpoint | Description | Status Code | Auth |
 |--------|----------|-------------|-------------|------|
-| `POST` | `/api/v1/candidates/bulk` | Register multiple candidates | 201 | ADMIN 🔜 |
+| `POST` | `/api/v1/candidates/bulk` | Register multiple candidates | 201 | ADMIN |
 
 #### Phase 4 — Status Management
 
 | Method | Endpoint | Description | Status Code | Auth |
 |--------|----------|-------------|-------------|------|
-| `PATCH` | `/api/v1/candidates/{id}/status` | Change candidate status | 200 | ADMIN 🔜 |
+| `PATCH` | `/api/v1/candidates/{id}/status` | Change candidate status | 200 | ADMIN |
 | `GET` | `/api/v1/candidates/election/{electionId}/active` | Active candidates only | 200 | PUBLIC |
 
 ### Error Codes
@@ -377,7 +378,9 @@ candidate-service/
 │   │   ├── java/com/voting/candidateservice/
 │   │   │   ├── CandidateServiceApplication.java    ← Entry point
 │   │   │   ├── config/
-│   │   │   │   └── DataSeeder.java                 ← Seeds 10 sample candidates
+│   │   │   │   ├── CacheConfig.java                ← Redis read caches (typed JSON, 10 min TTL)
+│   │   │   │   ├── DataSeeder.java                 ← Seeds 10 sample candidates
+│   │   │   │   └── KafkaConfig.java                ← candidate.* topics
 │   │   │   ├── controller/
 │   │   │   │   └── CandidateController.java        ← 11 REST endpoints
 │   │   │   ├── dto/
@@ -400,21 +403,29 @@ candidate-service/
 │   │   │   │       └── CandidateStatus.java        ← ACTIVE, DISQUALIFIED, WITHDRAWN
 │   │   │   ├── repository/
 │   │   │   │   └── CandidateRepository.java        ← Spring Data JPA
+│   │   │   ├── security/
+│   │   │   │   ├── JwtAuthenticationFilter.java    ← Reads the bearer token
+│   │   │   │   ├── JwtPrincipal.java               ← userId, username, role
+│   │   │   │   ├── JwtService.java                 ← HS256 verification
+│   │   │   │   └── SecurityConfig.java             ← Public reads, ADMIN writes, JSON 401/403
 │   │   │   └── service/
+│   │   │       ├── CandidateEventProducer.java     ← After-commit Kafka events
 │   │   │       ├── CandidateService.java           ← Interface (contract)
-│   │   │       └── CandidateServiceImpl.java       ← Implementation (business logic)
+│   │   │       └── CandidateServiceImpl.java       ← Implementation (business logic, caching)
 │   │   └── resources/
-│   │       └── application.yml                     ← Database + Eureka config
+│   │       └── application.yml                     ← Database, Kafka, Redis, Eureka config
 │   └── test/
 │       └── java/com/voting/candidateservice/
+│           ├── CandidateServiceApplicationTests.java   ← 1 test (context loads)
+│           ├── config/CacheConfigTest.java              ← 3 tests (Redis serializers)
 │           ├── controller/
-│           │   └── CandidateControllerTest.java    ← 15 tests (MockMvc)
-│           ├── service/
-│           │   └── CandidateServiceImplTest.java   ← 13 tests (Mockito)
-│           └── repository/
-│               └── CandidateRepositoryTest.java    ← 4 tests (@DataJpaTest + H2)
-├── CANDIDATE_SERVICE_BLACKBOOK.md                  ← Complete technical reference
-├── IMPLEMENTATION_PLAN.md                          ← Step-by-step build checklist
+│           │   ├── CandidateControllerTest.java         ← 16 tests (MockMvc)
+│           │   └── CandidateSecurityIntegrationTest.java← 9 tests (roles, 401/403, input limits)
+│           ├── repository/CandidateRepositoryTest.java  ← 4 tests (@DataJpaTest + H2)
+│           └── service/
+│               ├── CandidateCachingTest.java            ← 5 tests (cache hits and evictions)
+│               ├── CandidateEventProducerTest.java      ← 5 tests (after-commit, failures)
+│               └── CandidateServiceImplTest.java        ← 15 tests (Mockito)
 ├── README.md                                       ← This file
 ├── pom.xml
 └── .gitignore
@@ -445,12 +456,12 @@ candidate-service/
 3. **Set environment variables**
    ```bash
    # Linux / macOS
-   export VOTING_DB_URL=jdbc:postgresql://localhost:5432/candidateservice_db
+   export VOTING_DB_URL=jdbc:postgresql://localhost:5432   # server base URL; /candidateservice_db is appended
    export VOTING_DB_USER=postgres
    export VOTING_DB_PASSWORD=yourpassword
 
    # Windows (PowerShell)
-   $env:VOTING_DB_URL="jdbc:postgresql://localhost:5432/candidateservice_db"
+   $env:VOTING_DB_URL="jdbc:postgresql://localhost:5432"
    $env:VOTING_DB_USER="postgres"
    $env:VOTING_DB_PASSWORD="yourpassword"
    ```
@@ -527,18 +538,16 @@ spring:
   application:
     name: candidate-service
   datasource:
-    url: ${VOTING_DB_URL}                  # Environment variable
+    url: ${VOTING_DB_URL}/candidateservice_db   # VOTING_DB_URL = server base URL
     username: ${VOTING_DB_USER}
     password: ${VOTING_DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update                     # Auto-create/modify tables
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+  cache:
+    type: redis                                 # candidate read caches, 10 min TTL
 
 server:
   port: 8082
@@ -546,34 +555,36 @@ server:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
-    enabled: false                         # Enable when Eureka Server is deployed
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
 ```
+(abridged; see `src/main/resources/application.yml`)
 
 ### Environment Variables
 
 | Variable | Example | Required |
 |----------|---------|----------|
-| `VOTING_DB_URL` | `jdbc:postgresql://localhost:5432/candidateservice_db` | ✅ |
+| `VOTING_DB_URL` | `jdbc:postgresql://localhost:5432` | ✅ |
 | `VOTING_DB_USER` | `postgres` | ✅ |
 | `VOTING_DB_PASSWORD` | `yourpassword` | ✅ |
+| `JWT_SECRET` | same Base64 secret as user-service | ✅ |
+| `KAFKA_BOOTSTRAP_SERVERS`, `REDIS_HOST`, `REDIS_PORT`, `EUREKA_URL` | localhost defaults | optional |
 
 ---
 
-## 📡 Kafka Events (Planned)
+## 📡 Kafka Events
+
+Published only after the database transaction commits, keyed by candidate id, as plain JSON (no Java type headers).
+If the broker is down the change is still saved and the failure is logged.
 
 | Topic | Trigger | Payload | Consumer |
 |-------|---------|---------|----------|
-| `candidate.created` | `POST /candidates` | `{ candidateId, name, party, electionId }` | Voting Service (cache) |
-| `candidate.status-changed` | `PATCH /{id}/status` | `{ candidateId, oldStatus, newStatus, electionId }` | Voting Service |
-| `candidate.deleted` | `DELETE /{id}` | `{ candidateId, electionId }` | Voting Service |
+| `candidate.created` | `POST /candidates`, `POST /candidates/bulk` | candidate response (`id, name, party, electionId, status, createdAt, updatedAt`) | Voting Service (status cache) |
+| `candidate.status-changed` | `PATCH /{id}/status` | same | Voting Service |
+| `candidate.deleted` | `DELETE /{id}` | same | Voting Service |
 
 ---
 
 ## 📋 Implementation Progress
-
-> Detailed checklist: [IMPLEMENTATION_PLAN.md](src/main/java/com/voting/candidateservice/docs/IMPLEMENTATION_PLAN.md)  
-> Full technical reference: [CANDIDATE_SERVICE_BLACKBOOK.md](src/main/java/com/voting/candidateservice/docs/CANDIDATE_SERVICE_BLACKBOOK.md)
 
 | Step | Description | Status |
 |------|-------------|--------|
@@ -588,10 +599,10 @@ eureka:
 | 8 | Service layer — Phase 3 & 4 (Bulk + Status) | ✅ Done |
 | 9 | Controller — all 11 endpoints wired | ✅ Done |
 | 10 | Configuration (`application.yml`, env vars) | ✅ Done |
-| 11 | Testing (32 tests — service, controller, repository) | ✅ Done |
-| 12 | Kafka integration | 🔜 Planned |
-| 13 | Redis caching | 🔜 Planned |
-| 14 | Security (JWT + `@PreAuthorize`) | 🔜 Planned |
+| 11 | Testing (58 tests — service, controller, repository, security, caching, events) | ✅ Done |
+| 12 | Kafka integration (after-commit, keyed events) | ✅ Done |
+| 13 | Redis caching | ✅ Done |
+| 14 | Security (JWT + `@PreAuthorize`) | ✅ Done |
 
 ---
 

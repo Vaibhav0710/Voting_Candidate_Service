@@ -1,5 +1,6 @@
 package com.voting.candidateservice.service;
 
+import com.voting.candidateservice.config.CacheConfig;
 import com.voting.candidateservice.dto.*;
 import com.voting.candidateservice.exception.DuplicateResourceException;
 import com.voting.candidateservice.exception.ResourceNotFoundException;
@@ -8,6 +9,9 @@ import com.voting.candidateservice.model.Candidate;
 import com.voting.candidateservice.model.enums.CandidateStatus;
 import com.voting.candidateservice.repository.CandidateRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,6 +31,8 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {CacheConfig.CANDIDATES_BY_ELECTION, CacheConfig.ACTIVE_CANDIDATES_BY_ELECTION},
+            key = "#requestDTO.electionId")
     public CandidateResponseDTO createCandidate(CandidateRequestDTO requestDTO) {
         // Prevent double registration
         if (candidateRepository.existsByNameAndElectionIdAndIsDeletedFalse(requestDTO.getName(),
@@ -43,6 +49,7 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CANDIDATE, key = "#id")
     public CandidateResponseDTO getCandidateById(UUID id) {
         Candidate candidate = findCandidateByExternalId(id);
         return candidateMapper.toResponseDTO(candidate);
@@ -56,6 +63,11 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.CANDIDATE, key = "#id"),
+            @CacheEvict(cacheNames = {CacheConfig.CANDIDATES_BY_ELECTION, CacheConfig.ACTIVE_CANDIDATES_BY_ELECTION},
+                    allEntries = true)
+    })
     public CandidateResponseDTO updateCandidate(UUID id, CandidateUpdateDTO updateDTO) {
         Candidate candidate = findCandidateByExternalId(id);
 
@@ -68,6 +80,11 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.CANDIDATE, key = "#id"),
+            @CacheEvict(cacheNames = {CacheConfig.CANDIDATES_BY_ELECTION, CacheConfig.ACTIVE_CANDIDATES_BY_ELECTION},
+                    allEntries = true)
+    })
     public CandidateResponseDTO updateCandidateStatus(UUID id, CandidateStatusUpdateDTO statusUpdateDTO) {
         Candidate candidate = findCandidateByExternalId(id);
         candidate.setStatus(statusUpdateDTO.getStatus());
@@ -79,6 +96,8 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {CacheConfig.CANDIDATES_BY_ELECTION, CacheConfig.ACTIVE_CANDIDATES_BY_ELECTION},
+            allEntries = true)
     public List<CandidateResponseDTO> bulkRegisterCandidates(BulkCandidateRequestDTO bulkRequestDTO) {
         return bulkRequestDTO.getCandidates().stream()
                 .map(this::createCandidate)
@@ -87,6 +106,11 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.CANDIDATE, key = "#id"),
+            @CacheEvict(cacheNames = {CacheConfig.CANDIDATES_BY_ELECTION, CacheConfig.ACTIVE_CANDIDATES_BY_ELECTION},
+                    allEntries = true)
+    })
     public void deleteCandidate(UUID id) {
         Candidate candidate = findCandidateByExternalId(id);
         candidate.setDeleted(true);
@@ -95,6 +119,7 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CANDIDATES_BY_ELECTION, key = "#electionId")
     public List<CandidateResponseDTO> getCandidatesByElection(UUID electionId) {
         return candidateRepository.findByElectionIdAndIsDeletedFalse(electionId)
                 .stream()
@@ -103,6 +128,7 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.ACTIVE_CANDIDATES_BY_ELECTION, key = "#electionId")
     public List<CandidateResponseDTO> getActiveCandidatesByElection(UUID electionId) {
         return candidateRepository.findByElectionIdAndStatusAndIsDeletedFalse(electionId,
                         CandidateStatus.ACTIVE)

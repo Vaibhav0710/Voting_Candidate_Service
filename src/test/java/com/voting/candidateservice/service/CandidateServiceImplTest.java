@@ -41,6 +41,9 @@ class CandidateServiceImplTest {
     @Mock
     private CandidateMapper candidateMapper;
 
+    @Mock
+    private CandidateEventProducer candidateEventProducer;
+
     @InjectMocks
     private CandidateServiceImpl candidateService;
 
@@ -89,6 +92,7 @@ class CandidateServiceImplTest {
         assertNotNull(result);
         assertEquals("Rahul Sharma", result.getName());
         verify(candidateRepository, times(1)).save(candidate);
+        verify(candidateEventProducer).publishCandidateCreated(responseDTO);
     }
 
     @Test
@@ -178,6 +182,7 @@ class CandidateServiceImplTest {
 
         assertNotNull(result);
         assertEquals(CandidateStatus.WITHDRAWN, result.getStatus());
+        verify(candidateEventProducer).publishCandidateStatusChanged(updatedResponse);
     }
 
     @Test
@@ -188,6 +193,7 @@ class CandidateServiceImplTest {
 
         assertTrue(candidate.isDeleted());
         verify(candidateRepository, times(1)).save(candidate);
+        verify(candidateEventProducer).publishCandidateDeleted(any());
     }
 
     @Test

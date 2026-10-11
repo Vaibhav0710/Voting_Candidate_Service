@@ -100,6 +100,16 @@ class CandidateControllerTest {
         }
 
         @Test
+        void unexpectedError_Returns500WithoutLeakingDetails() throws Exception {
+                when(candidateService.getCandidateById(candidateId))
+                                .thenThrow(new IllegalStateException("connection to db-host:5432 refused"));
+
+                mockMvc.perform(get("/api/v1/candidates/{id}", candidateId))
+                                .andExpect(status().isInternalServerError())
+                                .andExpect(jsonPath("$.message").value("An unexpected error occurred."));
+        }
+
+        @Test
         void bulkRegister_Success() throws Exception {
                 CandidateResponseDTO c1 = CandidateResponseDTO.builder().id(UUID.randomUUID()).name("Amit Verma")
                                 .build();
