@@ -1,5 +1,6 @@
 package com.voting.candidateservice.service;
 
+import com.voting.candidateservice.audit.AuditLogger;
 import com.voting.candidateservice.config.CacheConfig;
 import com.voting.candidateservice.dto.*;
 import com.voting.candidateservice.exception.DuplicateResourceException;
@@ -28,6 +29,7 @@ public class CandidateServiceImpl implements CandidateService {
     private final CandidateRepository candidateRepository;
     private final CandidateMapper candidateMapper;
     private final CandidateEventProducer candidateEventProducer;
+    private final AuditLogger auditLogger;
 
     @Override
     @Transactional
@@ -45,6 +47,7 @@ public class CandidateServiceImpl implements CandidateService {
         Candidate savedCandidate = candidateRepository.save(candidate);
         CandidateResponseDTO response = candidateMapper.toResponseDTO(savedCandidate);
         candidateEventProducer.publishCandidateCreated(response);
+        auditLogger.recordForCurrentUser("CANDIDATE_CREATED", "candidate:" + response.getId(), "SUCCESS");
         return response;
     }
 
@@ -75,6 +78,7 @@ public class CandidateServiceImpl implements CandidateService {
         candidate.setParty(updateDTO.getParty());
 
         Candidate updatedCandidate = candidateRepository.save(candidate);
+        auditLogger.recordForCurrentUser("CANDIDATE_UPDATED", "candidate:" + id, "SUCCESS");
         return candidateMapper.toResponseDTO(updatedCandidate);
     }
 
@@ -91,6 +95,7 @@ public class CandidateServiceImpl implements CandidateService {
         Candidate updatedCandidate = candidateRepository.save(candidate);
         CandidateResponseDTO response = candidateMapper.toResponseDTO(updatedCandidate);
         candidateEventProducer.publishCandidateStatusChanged(response);
+        auditLogger.recordForCurrentUser("CANDIDATE_STATUS_CHANGED", "candidate:" + id, statusUpdateDTO.getStatus().name());
         return response;
     }
 
@@ -116,6 +121,7 @@ public class CandidateServiceImpl implements CandidateService {
         candidate.setDeleted(true);
         candidateRepository.save(candidate);
         candidateEventProducer.publishCandidateDeleted(candidateMapper.toResponseDTO(candidate));
+        auditLogger.recordForCurrentUser("CANDIDATE_DELETED", "candidate:" + id, "SUCCESS");
     }
 
     @Override

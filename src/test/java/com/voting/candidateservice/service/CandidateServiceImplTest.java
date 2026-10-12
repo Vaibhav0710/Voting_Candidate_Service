@@ -1,5 +1,6 @@
 package com.voting.candidateservice.service;
 
+import com.voting.candidateservice.audit.AuditLogger;
 import com.voting.candidateservice.dto.BulkCandidateRequestDTO;
 import com.voting.candidateservice.dto.CandidateRequestDTO;
 import com.voting.candidateservice.dto.CandidateResponseDTO;
@@ -43,6 +44,9 @@ class CandidateServiceImplTest {
 
     @Mock
     private CandidateEventProducer candidateEventProducer;
+
+    @Mock
+    private AuditLogger auditLogger;
 
     @InjectMocks
     private CandidateServiceImpl candidateService;
@@ -93,6 +97,7 @@ class CandidateServiceImplTest {
         assertEquals("Rahul Sharma", result.getName());
         verify(candidateRepository, times(1)).save(candidate);
         verify(candidateEventProducer).publishCandidateCreated(responseDTO);
+        verify(auditLogger).recordForCurrentUser("CANDIDATE_CREATED", "candidate:" + candidateId, "SUCCESS");
     }
 
     @Test
@@ -160,6 +165,7 @@ class CandidateServiceImplTest {
 
         assertNotNull(result);
         assertEquals("Priya Patel", result.getName());
+        verify(auditLogger).recordForCurrentUser("CANDIDATE_UPDATED", "candidate:" + candidateId, "SUCCESS");
     }
 
     @Test
@@ -183,6 +189,7 @@ class CandidateServiceImplTest {
         assertNotNull(result);
         assertEquals(CandidateStatus.WITHDRAWN, result.getStatus());
         verify(candidateEventProducer).publishCandidateStatusChanged(updatedResponse);
+        verify(auditLogger).recordForCurrentUser("CANDIDATE_STATUS_CHANGED", "candidate:" + candidateId, "WITHDRAWN");
     }
 
     @Test
@@ -194,6 +201,7 @@ class CandidateServiceImplTest {
         assertTrue(candidate.isDeleted());
         verify(candidateRepository, times(1)).save(candidate);
         verify(candidateEventProducer).publishCandidateDeleted(any());
+        verify(auditLogger).recordForCurrentUser("CANDIDATE_DELETED", "candidate:" + candidateId, "SUCCESS");
     }
 
     @Test

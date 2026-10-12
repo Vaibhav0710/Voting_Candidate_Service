@@ -104,6 +104,13 @@ public class CandidateSecurityIntegrationTest {
         }
 
         @Test
+        @WithMockUser(authorities = "ROLE_ADMIN")
+        void unknownPath_Is404_Not500() throws Exception {
+                mockMvc.perform(get("/api/v1/does-not-exist"))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
         @WithMockUser(authorities = "ROLE_VOTER")
         void changeStatus_WithVoterRole_IsForbidden() throws Exception {
                 mockMvc.perform(patch("/api/v1/candidates/{id}/status", UUID.randomUUID())

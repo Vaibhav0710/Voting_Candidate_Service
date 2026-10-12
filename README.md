@@ -619,6 +619,18 @@ If the broker is down the change is still saved and the failure is logged.
 
 ---
 
+
+## 📈 Observability
+
+| What | How |
+|------|-----|
+| Metrics | `GET /actuator/prometheus` (tag `application=<service>`); health probes at `/actuator/health/liveness` and `/readiness` |
+| Tracing | Micrometer + Brave; trace ids in every log line. Export to Zipkin with `TRACING_SAMPLING` (default 0.0 locally, 0.1 in `prod`) and `ZIPKIN_URL` |
+| Logs | Plain console by default; `json-logs` profile = one JSON object per line; `logstash` profile also ships to `LOGSTASH_HOST:LOGSTASH_PORT`. `prod` turns on `json-logs` |
+| Audit | `AUDIT` logger lines `action=… actor=… target=… outcome=…` (no passwords, tokens or ballot choices) |
+
+---
+
 ## 📝 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
