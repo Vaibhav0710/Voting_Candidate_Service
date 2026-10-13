@@ -620,6 +620,18 @@ If the broker is down the change is still saved and the failure is logged.
 ---
 
 
+## 🐳 Docker
+
+```bash
+docker build -t voting/candidate-service:1.0.0 .
+```
+
+The multi-stage `Dockerfile` builds the jar with Maven and runs it on a Java 17 JRE (Alpine) as a non-root user, with a
+health check on `/actuator/health/readiness` (port 8082). To run the whole system, use `docker compose up -d --build` in
+the root `Voting_System` repo (see its README).
+
+---
+
 ## 📈 Observability
 
 | What | How |
