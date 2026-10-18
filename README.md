@@ -329,7 +329,7 @@ http://localhost:8082/swagger-ui.html
 
 ## 🗄️ Database Schema
 
-**Database:** `candidateservice_db` (isolated — each microservice owns its data)
+**Database:** schema `candidate_service` in the shared `voting_system` database (isolated — each microservice owns its schema)
 
 ### Public ID Pattern
 
@@ -448,15 +448,17 @@ candidate-service/
    cd candidate-service
    ```
 
-2. **Create PostgreSQL database**
+2. **Create the PostgreSQL database and schema** (skip if the root `Voting_System` setup already did)
    ```sql
-   CREATE DATABASE candidateservice_db;
+   CREATE DATABASE voting_system;
+   -- then, connected to voting_system:
+   CREATE SCHEMA candidate_service;
    ```
 
 3. **Set environment variables**
    ```bash
    # Linux / macOS
-   export VOTING_DB_URL=jdbc:postgresql://localhost:5432   # server base URL; /candidateservice_db is appended
+   export VOTING_DB_URL=jdbc:postgresql://localhost:5432   # server base URL; /voting_system?currentSchema=candidate_service is appended
    export VOTING_DB_USER=postgres
    export VOTING_DB_PASSWORD=yourpassword
 
@@ -538,7 +540,7 @@ spring:
   application:
     name: candidate-service
   datasource:
-    url: ${VOTING_DB_URL}/candidateservice_db   # VOTING_DB_URL = server base URL
+    url: ${VOTING_DB_URL}/voting_system?currentSchema=candidate_service   # VOTING_DB_URL = server base URL
     username: ${VOTING_DB_USER}
     password: ${VOTING_DB_PASSWORD}
   kafka:
